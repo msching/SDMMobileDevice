@@ -19,3 +19,4 @@ SDMMobileDevice.podspec
 podspec
 */*.xcodeproj/xcshareddata
 SDMMobileDevice.xcworkspace/xcshareddata
+/openssl-0.9.8zg/*
