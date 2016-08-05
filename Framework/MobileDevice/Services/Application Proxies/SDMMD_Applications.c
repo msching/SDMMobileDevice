@@ -124,6 +124,41 @@ sdmmd_return_t SDMMD_AMDeviceLookupApplications(SDMMD_AMDeviceRef device, CFDict
 	return result;
 }
 
+sdmmd_return_t SDMMD_AMDeviceGetApplicationIconPNGData(SDMMD_AMDeviceRef device, CFStringRef bundleId, CFDictionaryRef *response)
+{
+    sdmmd_return_t result = kAMDInvalidArgumentError;
+    if (device) {
+        if (bundleId) {
+            CFDictionaryRef options_dict = NULL;
+            SDMMD_AMConnectionRef conn = SDMMD_AMDServiceConnectionCreate(0, NULL, options_dict);
+            result = SDMMD_AMDeviceSecureStartService(device, CFSTR(AMSVC_SPRINGBOARD_SERVICES), NULL, &conn);
+            if (result == 0) {
+                CFMutableDictionaryRef dict = SDMMD_create_dict();
+                CFMutableDictionaryRef request = SDMMD_create_dict();
+                result = kAMDNoResourcesError;
+                if (dict && request) {
+                    CFDictionarySetValue(request, CFSTR(kCommand), CFSTR(kCommandGetIconPNGData));
+                    CFDictionarySetValue(request, CFSTR(kPropertyBundleID), bundleId);
+                    SocketConnection socket = SDMMD_TranslateConnectionToSocket(conn);
+                    result = SDMMD_ServiceSendMessage(socket, request, kCFPropertyListBinaryFormat_v1_0);
+                    if (!result) {
+                        result = SDMMD_ServiceReceiveMessage(socket, &dict);
+                        if (!result) {
+                            *response = dict;
+                        }
+                    }
+                    CFSafeRelease(request);
+                }
+            }
+            else {
+                printf("%s: Was unable to start the springboard service on the device: %i\n", __FUNCTION__, device->ivars.device_id);
+            }
+            //CFSafeRelease(conn);
+        }
+    }
+    return result;
+}
+
 void SDMMD_preflight_transfer(char *path, struct stat *statRef, char *rStatRef)
 {
 	int statResult = stat(path, statRef);
